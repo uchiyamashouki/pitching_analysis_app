@@ -200,7 +200,7 @@
 
   dom.sourceVideo.addEventListener('error', () => {
     setStatus('動画の読み込みに失敗しました。別ファイルで再度お試しください。');
-  }
+  });
                                    
   dom.sourceVideo.addEventListener('timeupdate', () => {
     if (!dom.seekBar.matches(':active')) {
