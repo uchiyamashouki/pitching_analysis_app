@@ -32,13 +32,17 @@
   }
 
   function drawOverlay(ctx, state) {
-    drawLine(ctx, state.points.origin, state.points.xAxisEnd, '#ff9800');
-    drawLine(ctx, state.points.origin, state.points.yAxisEnd, '#03a9f4');
+    drawLine(ctx, state.points.planeP0, state.points.planeP1, '#ff9800');
+    drawLine(ctx, state.points.planeP1, state.points.planeP2, '#ff9800');
+    drawLine(ctx, state.points.planeP2, state.points.planeP3, '#ff9800');
+    drawLine(ctx, state.points.planeP3, state.points.planeP0, '#ff9800');
+    drawLine(ctx, state.points.headTop, state.points.footBottom, '#4caf50');
     drawLine(ctx, state.points.headTop, state.points.footBottom, '#4caf50');
 
-    drawPoint(ctx, state.points.origin, 'O', '#ef5350');
-    drawPoint(ctx, state.points.xAxisEnd, 'X', '#ff9800');
-    drawPoint(ctx, state.points.yAxisEnd, 'Y', '#03a9f4');
+    drawPoint(ctx, state.points.planeP0, 'P0', '#ef5350');
+    drawPoint(ctx, state.points.planeP1, 'P1', '#ff9800');
+    drawPoint(ctx, state.points.planeP2, 'P2', '#03a9f4');
+    drawPoint(ctx, state.points.planeP3, 'P3', '#ab47bc');
     drawPoint(ctx, state.points.headTop, 'Head', '#4caf50');
     drawPoint(ctx, state.points.footBottom, 'Foot', '#8bc34a');
   }
