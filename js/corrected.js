@@ -50,7 +50,7 @@
         canvas: dom.previewCanvas,
         transform: state.transform,
       });
-      return;
+        return;
     }
 
     renderSourceFrame({
