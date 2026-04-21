@@ -34,6 +34,32 @@
     ctx.restore();
   }
 
+  function stopCorrectedVideo({ state, dom }) {
+    state.isPlayingCorrected = false;
+    if (state.correctedRequestId !== null) {
+      cancelAnimationFrame(state.correctedRequestId);
+      state.correctedRequestId = null;
+    }
+
+    dom.sourceVideo.pause();
+
+    if (state.transform.matrix) {
+      renderCorrectedFrame({
+        video: dom.sourceVideo,
+        ctx: dom.ctx,
+        canvas: dom.previewCanvas,
+        transform: state.transform,
+      });
+      return;
+    }
+
+    renderSourceFrame({
+      video: dom.sourceVideo,
+      ctx: dom.ctx,
+      canvas: dom.previewCanvas,
+    });
+  }
+
   function playCorrectedVideo({ state, dom, setStatus }) {
     if (!state.transform.matrix) {
       setStatus('先に「補正実行」を行ってください。');
@@ -41,15 +67,54 @@
     }
 
     stopCorrectedVideo({ state, dom });
-    state.isPlayingCorrected = true;
 
-    const tick = () => {
-      if (!state.isPlayingCorrected) return;
-      renderCorrectedFrame({
-        video: dom.sourceVideo,
-        ctx: dom.ctx,
-        canvas: dom.previewCanvas,
-        transform: state.transform,
+    dom.sourceVideo.currentTime = 0;
+    dom.sourceVideo
+      .play()
+      .then(() => {
+        state.isPlayingCorrected = true;
+
+        const tick = () => {
+          if (!state.isPlayingCorrected) return;
+          renderCorrectedFrame({
+            video: dom.sourceVideo,
+            ctx: dom.ctx,
+            canvas: dom.previewCanvas,
+            transform: state.transform,
+          });
+
+          if (dom.sourceVideo.ended) {
+            stopCorrectedVideo({ state, dom });
+            return;
+          }
+
+          state.correctedRequestId = requestAnimationFrame(tick);
+        };
+
+        state.correctedRequestId = requestAnimationFrame(tick);
+      })
+      .catch(() => {
+        setStatus('再生を開始できませんでした。ブラウザの再生制限をご確認ください。');
       });
-      state.correctedRequestId = requestAnimationFrame(tick);
-    };
+  }
+
+  function exportCorrectedVideo({ state, dom, setStatus }) {
+    if (!state.transform.matrix) {
+      setStatus('先に「補正実行」を行ってください。');
+      return;
+    }
+
+    setStatus('WebM保存は未実装です。必要なら次に追加します。');
+    // TODO: MediaRecorder を利用した出力機能を追加。
+    // 現時点では再生機能の安定化を優先し、誤動作しないよう案内のみ表示する。
+    void dom;
+  }
+
+  App.Corrected = {
+    renderSourceFrame,
+    renderCorrectedFrame,
+    playCorrectedVideo,
+    stopCorrectedVideo,
+    exportCorrectedVideo,
+  };
+})(window);
