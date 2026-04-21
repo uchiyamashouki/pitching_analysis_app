@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>位置補正アプリ</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>位置補正アプリ（2Dアフィン変換）</h1>
+    </header>
+
+    <main class="layout">
+      <section class="panel controls">
+        <h2>設定</h2>
+        <label class="field">
+          <span>動画ファイル</span>
+          <input id="videoInput" type="file" accept="video/*" />
+        </label>
+
+        <label class="field">
+          <span>身長 (cm)</span>
+          <input id="heightInput" type="number" min="1" step="0.1" placeholder="例: 175" />
+        </label>
+
+        <div class="field">
+          <span>代表フレーム選択</span>
+          <input id="seekBar" type="range" min="0" max="0" step="0.001" value="0" disabled />
+          <div class="row">
+            <button id="pauseButton" type="button" disabled>一時停止</button>
+            <span id="timeLabel">0.000s / 0.000s</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <span>基準点設定モード</span>
+          <div class="mode-grid" id="modeButtons">
+            <button type="button" data-mode="origin">原点</button>
+            <button type="button" data-mode="xAxis">x軸</button>
+            <button type="button" data-mode="yAxis">y軸</button>
+            <button type="button" data-mode="headTop">頭頂</button>
+            <button type="button" data-mode="footBottom">足元</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span>表示モード</span>
+          <label><input type="radio" name="renderMode" value="autoCrop" checked /> 自動トリミング</label>
+          <label><input type="radio" name="renderMode" value="keepBlack" /> 黒余白維持</label>
+        </div>
+
+        <div class="row wrap">
+          <button id="applyButton" type="button">補正実行</button>
+          <button id="playButton" type="button">再生</button>
+          <button id="stopButton" type="button">停止</button>
+          <button id="resetPointsButton" type="button">再設定</button>
+          <button id="resetAllButton" type="button">リセット</button>
+        </div>
+
+        <div class="field">
+          <button id="exportButton" type="button">WebM保存（任意）</button>
+          <p id="statusText">動画を読み込んでください。</p>
+        </div>
+      </section>
+
+      <section class="panel player-panel">
+        <h2>元動画</h2>
+        <video id="sourceVideo" controls playsinline></video>
+      </section>
+
+      <section class="panel canvas-panel">
+        <h2>代表フレーム / 補正後プレビュー</h2>
+        <canvas id="previewCanvas"></canvas>
+      </section>
+    </main>
+
+    <script src="js/state.js"></script>
+    <script src="js/dom.js"></script>
+    <script src="js/transform.js"></script>
+    <script src="js/overlay.js"></script>
+    <script src="js/corrected.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
