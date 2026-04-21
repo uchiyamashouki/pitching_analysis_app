@@ -1,31 +1,31 @@
 (function initTransformModule(global) {
   const App = (global.PitchingCorrectionApp = global.PitchingCorrectionApp || {});
 
-  function normalize(vec) {
-    const len = Math.hypot(vec.x, vec.y);
-    if (len < 1e-6) return null;
-    return { x: vec.x / len, y: vec.y / len };
-  }
+  function solveLinearSystem(matrix, vector) {
+    const n = vector.length;
+    const a = matrix.map((row, rowIndex) => [...row, vector[rowIndex]]);
 
-  function transformPoint([a, b, c, d, e, f], point) {
-    return {
-      x: a * point.x + c * point.y + e,
-      y: b * point.x + d * point.y + f,
-    };
-  }
+    for (let col = 0; col < n; col += 1) {
+      let pivot = col;
+      for (let row = col + 1; row < n; row += 1) {
+        if (Math.abs(a[row][col]) > Math.abs(a[pivot][col])) pivot = row;
+      }
+      if (Math.abs(a[pivot][col]) < 1e-10) return null;
+      if (pivot !== col) [a[pivot], a[col]] = [a[col], a[pivot]];
 
-  function invertCanvasMatrix([a, b, c, d, e, f]) {
-    const det = a * d - b * c;
-    if (Math.abs(det) < 1e-10) return null;
+      const divisor = a[col][col];
+      for (let c = col; c <= n; c += 1) a[col][c] /= divisor;
 
-    const ia = d / det;
-    const ib = -b / det;
-    const ic = -c / det;
-    const id = a / det;
-    const ie = (c * f - d * e) / det;
-    const iff = (b * e - a * f) / det;
-
-    return [ia, ib, ic, id, ie, iff];
+      for (let row = 0; row < n; row += 1) {
+        if (row === col) continue;
+        const factor = a[row][col];
+        for (let c = col; c <= n; c += 1) {
+          a[row][c] -= factor * a[col][c];
+        }
+      }
+    }
+    
+    return a.map((row) => row[n]);
   }
 
   function computeScaleFromHeight(heightCm, headTop, footBottom) {
@@ -37,70 +37,104 @@
     return heightCm / pixelHeight;
   }
 
-  function computeAffineTransform({ origin, xAxisEnd, yAxisEnd, renderMode, videoWidth, videoHeight }) {
-    const vx = { x: xAxisEnd.x - origin.x, y: xAxisEnd.y - origin.y };
-    const vyRaw = { x: yAxisEnd.x - origin.x, y: yAxisEnd.y - origin.y };
+  function invertHomography(matrix) {
+    const [a, b, c, d, e, f, g, h, i] = matrix;
+    const A = e * i - f * h;
+    const B = -(d * i - f * g);
+    const C = d * h - e * g;
+    const D = -(b * i - c * h);
+    const E = a * i - c * g;
+    const F = -(a * h - b * g);
+    const G = b * f - c * e;
+    const H = -(a * f - c * d);
+    const I = a * e - b * d;
+    const det = a * A + b * B + c * C;
+    if (Math.abs(det) < 1e-10) return null;
+    return [A / det, D / det, G / det, B / det, E / det, H / det, C / det, F / det, I / det];
+  }
 
-    const ex = normalize(vx);
-    if (!ex) return null;
+  function projectPoint(matrix, point) {
+    const [h11, h12, h13, h21, h22, h23, h31, h32, h33] = matrix;
+    const w = h31 * point.x + h32 * point.y + h33;
+    if (Math.abs(w) < 1e-10) return null;
+    return {
+      x: (h11 * point.x + h12 * point.y + h13) / w,
+      y: (h21 * point.x + h22 * point.y + h23) / w,
+    };
+  }
 
-    const dot = vyRaw.x * ex.x + vyRaw.y * ex.y;
-    const vyOrtho = { x: vyRaw.x - dot * ex.x, y: vyRaw.y - dot * ex.y };
+  function computeHomography(srcPoints, dstPoints) {
+    if (srcPoints.length !== 4 || dstPoints.length !== 4) return null;
 
-    let ey = normalize(vyOrtho);
-    if (!ey) ey = { x: -ex.y, y: ex.x };
-    if (ey.y > 0) ey = { x: -ey.x, y: -ey.y };
+    const matrix = [];
+    const vector = [];
 
-    const matrix = [
-      ex.x,
-      ex.y,
-      ey.x,
-      ey.y,
-      -(ex.x * origin.x + ey.x * origin.y),
-      -(ex.y * origin.x + ey.y * origin.y),
-    ];     
+    for (let idx = 0; idx < 4; idx += 1) {
+      const { x, y } = srcPoints[idx];
+      const { x: u, y: v } = dstPoints[idx];
 
-    const inverseMatrix = invertCanvasMatrix(matrix);
+      matrix.push([x, y, 1, 0, 0, 0, -u * x, -u * y]);
+      vector.push(u);
+      matrix.push([0, 0, 0, x, y, 1, -v * x, -v * y]);
+      vector.push(v);
+    }
+
+    const solved = solveLinearSystem(matrix, vector);
+    if (!solved) return null;
+    return [...solved, 1];
+  }
+
+  function distance(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function computeHomographyTransform({ planePoints, renderMode, videoWidth, videoHeight }) {
+    const width = Math.max(
+      1,
+      Math.round((distance(planePoints[0], planePoints[1]) + distance(planePoints[3], planePoints[2])) / 2),
+    );
+    const height = Math.max(
+      1,
+      Math.round((distance(planePoints[0], planePoints[3]) + distance(planePoints[1], planePoints[2])) / 2),
+    );
+
+    const cropOutput = {
+      width,
+      height,
+      x: 0,
+      y: 0,
+    };
+
+    const keepBlackOutput = {
+      width: videoWidth,
+      height: videoHeight,
+      x: 0,
+      y: 0,
+    }; 
+
+    const output = renderMode === 'autoCrop' ? cropOutput : keepBlackOutput;
+    const offsetX = renderMode === 'autoCrop' ? 0 : (videoWidth - width) / 2;
+    const offsetY = renderMode === 'autoCrop' ? 0 : (videoHeight - height) / 2;
+    const destinationRect = { width, height, offsetX, offsetY };
+
+    const destinationPlane = [
+      { x: offsetX, y: offsetY },
+      { x: offsetX + width, y: offsetY },
+      { x: offsetX + width, y: offsetY + height },
+      { x: offsetX, y: offsetY + height },
+    ];
+
+    const matrix = computeHomography(planePoints, destinationPlane);
+    if (!matrix) return null;
+    const inverseMatrix = invertHomography(matrix);
     if (!inverseMatrix) return null;
 
-    const corners = [
-      { x: 0, y: 0 },
-      { x: videoWidth, y: 0 },
-      { x: videoWidth, y: videoHeight },
-      { x: 0, y: videoHeight },
-    ].map((point) => transformPoint(matrix, point));
-
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    corners.forEach((point) => {
-      minX = Math.min(minX, point.x);
-      minY = Math.min(minY, point.y);
-      maxX = Math.max(maxX, point.x);
-      maxY = Math.max(maxY, point.y);
-    });
-
-    const output = renderMode === 'autoCrop'
-      ? {
-          width: Math.max(1, Math.ceil(maxX - minX)),
-          height: Math.max(1, Math.ceil(maxY - minY)),
-          x: minX,
-          y: minY,
-        }
-      : {
-          width: videoWidth,
-          height: videoHeight,
-          x: 0,
-          y: 0,
-        };
-
-    return { matrix, inverseMatrix, output };
+    return { type: 'homography', matrix, inverseMatrix, output, destinationRect };
   }
 
   App.Transform = {
     computeScaleFromHeight,
-    computeAffineTransform,
+    computeHomographyTransform,
+    projectPoint,
   };
 })(window);
