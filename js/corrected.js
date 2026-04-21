@@ -10,6 +10,8 @@
 
   function renderSourceFrame({ video, ctx, canvas }) {
     clearCanvas(canvas, ctx);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   }
 
@@ -25,6 +27,8 @@
 
     clearCanvas(canvas, ctx);
     ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.setTransform(a, b, c, d, e - offsetX, f - offsetY);
     ctx.drawImage(video, 0, 0);
     ctx.restore();
@@ -49,88 +53,3 @@
       });
       state.correctedRequestId = requestAnimationFrame(tick);
     };
-
-    dom.sourceVideo.currentTime = 0;
-    dom.sourceVideo.play();
-    tick();
-    setStatus('補正後プレビューを再生中です。');
-  }
-
-  function stopCorrectedVideo({ state, dom }) {
-    state.isPlayingCorrected = false;
-    if (state.correctedRequestId) {
-      cancelAnimationFrame(state.correctedRequestId);
-      state.correctedRequestId = null;
-    }
-    dom.sourceVideo.pause();
-  }
-
-  function exportCorrectedVideo({ state, dom, setStatus }) {
-    if (!state.transform.matrix) {
-      setStatus('先に「補正実行」を行ってください。');
-      return;
-    }
-
-    if (!window.MediaRecorder) {
-      setStatus('このブラウザは MediaRecorder に対応していません。');
-      return;
-    }
-
-    stopCorrectedVideo({ state, dom });
-    state.exportChunks = [];
-
-    const stream = dom.previewCanvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
-    state.exportRecorder = recorder;
-
-    recorder.ondataavailable = (event) => {
-      if (event.data?.size > 0) state.exportChunks.push(event.data);
-    };
-
-    recorder.onstop = () => {
-      const blob = new Blob(state.exportChunks, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'corrected.webm';
-      a.click();
-      URL.revokeObjectURL(url);
-      state.exportRecorder = null;
-      setStatus('WebM を保存しました。');
-    };
-
-    dom.sourceVideo.currentTime = 0;
-    dom.sourceVideo.play();
-    recorder.start();
-    state.isPlayingCorrected = true;
-
-    const tick = () => {
-      if (!state.isPlayingCorrected) return;
-      renderCorrectedFrame({
-        video: dom.sourceVideo,
-        ctx: dom.ctx,
-        canvas: dom.previewCanvas,
-        transform: state.transform,
-      });
-
-      if (dom.sourceVideo.ended) {
-        state.isPlayingCorrected = false;
-        recorder.stop();
-        return;
-      }
-
-      state.correctedRequestId = requestAnimationFrame(tick);
-    };
-
-    tick();
-    setStatus('書き出し中です...');
-  }
-
-   App.Corrected = {
-    renderSourceFrame,
-    renderCorrectedFrame,
-    playCorrectedVideo,
-    stopCorrectedVideo,
-    exportCorrectedVideo,
-  };
-})(window);
