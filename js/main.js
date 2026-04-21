@@ -121,6 +121,7 @@
 
     dom.sourceVideo.removeAttribute('src');
     dom.sourceVideo.load();
+    dom.videoInput.value = '';
     dom.previewCanvas.width = 640;
     dom.previewCanvas.height = 360;
     dom.ctx.fillStyle = '#000';
@@ -145,6 +146,7 @@
     state.videoUrl = URL.createObjectURL(file);
     dom.sourceVideo.src = state.videoUrl;
     dom.sourceVideo.load();
+    setStatus(`動画を読み込み中: ${file.name}`);
   }
 
   function handleCanvasPointerDown(event) {
@@ -196,6 +198,10 @@
     setStatus('代表フレームに移動して基準点を設定してください。');
   });
 
+  dom.sourceVideo.addEventListener('error', () => {
+    setStatus('動画の読み込みに失敗しました。別ファイルで再度お試しください。');
+  }
+                                   
   dom.sourceVideo.addEventListener('timeupdate', () => {
     if (!dom.seekBar.matches(':active')) {
       dom.seekBar.value = dom.sourceVideo.currentTime;
