@@ -51,17 +51,13 @@
     if (!ey) ey = { x: -ex.y, y: ex.x };
     if (ey.y > 0) ey = { x: -ey.x, y: -ey.y };
 
-    const sx = Math.hypot(vx.x, vx.y);
-    const sy = Math.max(1e-6, Math.hypot(vyRaw.x, vyRaw.y));
-
     const matrix = [
-      ex.x / sx,
-      ex.y / sx,
-      ey.x / sy,
-      ey.y / sy,
-      -((ex.x / sx) * origin.x + (ey.x / sy) * origin.y),
-      -((ex.y / sx) * origin.x + (ey.y / sy) * origin.y),
-    ];
+      ex.x,
+      ex.y,
+      ey.x,
+      ey.y,
+      -(ex.x * origin.x + ey.x * origin.y),
+      -(ex.y * origin.x + ey.y * origin.y),
 
     const inverseMatrix = invertCanvasMatrix(matrix);
     if (!inverseMatrix) return null;
