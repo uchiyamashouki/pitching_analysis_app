@@ -58,6 +58,7 @@
       ey.y,
       -(ex.x * origin.x + ey.x * origin.y),
       -(ex.y * origin.x + ey.y * origin.y),
+    ];     
 
     const inverseMatrix = invertCanvasMatrix(matrix);
     if (!inverseMatrix) return null;
