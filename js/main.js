@@ -71,10 +71,13 @@
       state.points.footBottom,
     );
 
-    const transform = App.Transform.computeAffineTransform({
-      origin: state.points.origin,
-      xAxisEnd: state.points.xAxisEnd,
-      yAxisEnd: state.points.yAxisEnd,
+    const transform = App.Transform.computeHomographyTransform({
+      planePoints: [
+        state.points.planeP0,
+        state.points.planeP1,
+        state.points.planeP2,
+        state.points.planeP3,
+      ],
       renderMode: state.renderMode,
       videoWidth: dom.sourceVideo.videoWidth,
       videoHeight: dom.sourceVideo.videoHeight,
@@ -85,9 +88,11 @@
       return;
     }
 
+    state.transform.type = transform.type;
     state.transform.matrix = transform.matrix;
     state.transform.inverseMatrix = transform.inverseMatrix;
     state.transform.output = transform.output;
+    state.transform.destinationRect = transform.destinationRect;
 
     dom.previewCanvas.width = transform.output.width;
     dom.previewCanvas.height = transform.output.height;
@@ -99,7 +104,7 @@
       transform: state.transform,
     });
 
-    setStatus('補正完了。再生ボタンで確認できます。');
+    setStatus('ホモグラフィ補正が完了しました。再生ボタンで確認できます。');
   }
 
   function resetPoints() {
@@ -154,25 +159,12 @@
 
     const point = getCanvasPoint(event);
 
-    if (state.currentMode === 'origin') state.points.origin = point;
+    if (state.currentMode === 'planeP0') state.points.planeP0 = point;
+    if (state.currentMode === 'planeP1') state.points.planeP1 = point;
+    if (state.currentMode === 'planeP2') state.points.planeP2 = point;
+    if (state.currentMode === 'planeP3') state.points.planeP3 = point;
     if (state.currentMode === 'headTop') state.points.headTop = point;
     if (state.currentMode === 'footBottom') state.points.footBottom = point;
-
-    if (state.currentMode === 'xAxis') {
-      if (!state.points.origin) {
-        setStatus('先に原点を設定してください。');
-        return;
-      }
-      state.points.xAxisEnd = point;
-    }
-
-    if (state.currentMode === 'yAxis') {
-      if (!state.points.origin) {
-        setStatus('先に原点を設定してください。');
-        return;
-      }
-      state.points.yAxisEnd = point;
-    }
 
     drawPreviewFrame();
   }
