@@ -8,17 +8,20 @@
       heightCm: null,
       currentMode: null,
       points: {
-        origin: null,
-        xAxisEnd: null,
-        yAxisEnd: null,
+        planeP0: null,
+        planeP1: null,
+        planeP2: null,
+        planeP3: null,
         headTop: null,
         footBottom: null,
       },
       transform: {
+        type: null,
         matrix: null,
         inverseMatrix: null,
         scaleCmPerPixel: null,
         output: null,
+        destinationRect: null,
       },
       renderMode: 'autoCrop',
       isPlayingCorrected: false,
@@ -30,17 +33,20 @@
 
   function resetPoints(state) {
     state.points = {
-      origin: null,
-      xAxisEnd: null,
-      yAxisEnd: null,
+      planeP0: null,
+      planeP1: null,
+      planeP2: null,
+      planeP3: null,
       headTop: null,
       footBottom: null,
     };
     state.transform = {
+      type: null,
       matrix: null,
       inverseMatrix: null,
       scaleCmPerPixel: null,
       output: null,
+      destinationRect: null,
     };
   }
 
