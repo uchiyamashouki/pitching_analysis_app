@@ -163,6 +163,9 @@
     if (state.currentMode === 'planeP1') state.points.planeP1 = point;
     if (state.currentMode === 'planeP2') state.points.planeP2 = point;
     if (state.currentMode === 'planeP3') state.points.planeP3 = point;
+    if (state.currentMode === 'origin') state.points.origin = point;
+    if (state.currentMode === 'xAxisEnd') state.points.xAxisEnd = point;
+    if (state.currentMode === 'yAxisEnd') state.points.yAxisEnd = point;
     if (state.currentMode === 'headTop') state.points.headTop = point;
     if (state.currentMode === 'footBottom') state.points.footBottom = point;
 
