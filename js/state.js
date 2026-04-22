@@ -7,7 +7,9 @@
       videoUrl: null,
       heightCm: null,
       currentMode: null,
-      points: {
+        origin: null,
+        xAxisEnd: null,
+        yAxisEnd: null,
         planeP0: null,
         planeP1: null,
         planeP2: null,
@@ -33,6 +35,9 @@
 
   function resetPoints(state) {
     state.points = {
+      origin: null,
+      xAxisEnd: null,
+      yAxisEnd: null,
       planeP0: null,
       planeP1: null,
       planeP2: null,
