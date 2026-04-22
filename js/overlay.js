@@ -43,6 +43,9 @@
     drawPoint(ctx, state.points.planeP1, 'P1', '#ff9800');
     drawPoint(ctx, state.points.planeP2, 'P2', '#03a9f4');
     drawPoint(ctx, state.points.planeP3, 'P3', '#ab47bc');
+    drawPoint(ctx, state.points.origin, 'Origin', '#fff176');
+    drawPoint(ctx, state.points.xAxisEnd, 'X', '#ffd54f');
+    drawPoint(ctx, state.points.yAxisEnd, 'Y', '#26c6da');
     drawPoint(ctx, state.points.headTop, 'Head', '#4caf50');
     drawPoint(ctx, state.points.footBottom, 'Foot', '#8bc34a');
   }
